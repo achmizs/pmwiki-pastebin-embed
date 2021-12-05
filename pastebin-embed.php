@@ -4,10 +4,10 @@
   * \Licensed under the MIT License
   * \brief Embed Pastebin pastes in a wikipage.
   */
-$RecipeInfo['PastebinEmbed']['Version'] = '2018-10-19';
+$RecipeInfo['PastebinEmbed']['Version'] = '2021-12-05';
 
 ## (:pastebin-embed:)
-Markup('pastebin-embed', '<fulltext', '/\\(:pastebin-embed\\s+(.+?)\\s*:\\)/', 'PastebinEmbed');
+Markup('pastebin-embed', '<fulltext', '/\(:pastebin-embed\s+(.+?)\s*:\)/', 'PastebinEmbed');
 
 SDV($PastebinEmbedHighlightStyle, "background-color: yellow;");
 
@@ -17,7 +17,7 @@ function PastebinEmbed ($m) {
 	## Parse arguments to the markup.
 	$parsed = ParseArgs($m[1]);
 
-	## These are the "bare" arguments (ones which don't require a key, just value(s)).	
+	## These are the ‘bare’ arguments (ones which don't require a key, just value(s)).
 	$args = $parsed[''];
 	$paste_id = $args[0];
 	$noJS = in_array('no-js', $args);
@@ -29,8 +29,10 @@ function PastebinEmbed ($m) {
 	## Convert the comma-delimited line ranges to an array containing each line to be
 	## included as values.
 	## Note that the line numbers will be zero-indexed (for use with raw text, etc.).
-	$line_ranges = $parsed['lines'] ? explode(',', $parsed['lines']) : array();
-	$line_numbers = array();
+	$line_ranges = $parsed['lines'] 
+				   ? explode(',', $parsed['lines']) 
+				   : [ ];
+	$line_numbers = [ ];
 	$to_end_from = -1;
 	foreach ($line_ranges as $key => $line_range) {
 		if (preg_match("/([0-9]+)[-–]([0-9]+)/", $line_range, $m)) {
@@ -43,8 +45,10 @@ function PastebinEmbed ($m) {
 	}
 	
 	## Same thing, but for highlighted line ranges.
-	$hl_line_ranges = $parsed['hl'] ? explode(',', $parsed['hl']) : array();
-	$hl_line_numbers = array();
+	$hl_line_ranges = $parsed['hl'] 
+					  ? explode(',', $parsed['hl']) 
+					  : [ ];
+	$hl_line_numbers = [ ];
 	$hl_to_end_from = -1;
 	foreach ($hl_line_ranges as $key => $hl_line_range) {
 		if (preg_match("/([0-9]+)[-–]([0-9]+)/", $hl_line_range, $m)) {
@@ -62,14 +66,14 @@ function PastebinEmbed ($m) {
 	
 	$out = "<span class='pastebin-embed-error'>Unknown error.</span>";
 	
-	## There are three 'modes': raw (retrieve just the text, client-side, and insert it
+	## There are three ‘modes’: raw (retrieve just the text, client-side, and insert it
 	## into the page), no-js (retrieve the HTML, server-side, and insert it into the 
-	## page), and default (i.e., JS-based - insert the scriptlet, and let it retrieve and 
+	## page), and default (i.e., JS-based: insert the scriptlet, and let it retrieve and 
 	## insert the HTML into the page, client-side & async).
 	## The mode is set by arguments to the (:pastebin-embed:) markup:
-	## - if neither the 'raw' nor the 'no-js' option is given, default (JS) mode is used
-	## - if the 'raw' option is given, raw mode is used
-	## - if the 'no-js' option is given, no-js mode is used
+	## - if neither the ‘raw’ nor the ‘no-js’ option is given, default (JS) mode is used
+	## - if the ‘raw’ option is given, raw mode is used
+	## - if the ‘no-js’ option is given, no-js mode is used
 	if ($raw) {
 		$raw_text = file_get_contents($embed_raw_url);
 		if (!$raw_text) return Keep("<span class='pastebin-embed-error'>Could not retrieve paste!</span>");
@@ -96,8 +100,10 @@ function PastebinEmbed ($m) {
 		}
 		$raw_text = implode("\n", $raw_lines);
 		
-		## The 'no-pre' option means we shouldn't wrap the text in a <pre> tag.
-		$out = $noPre ? $raw_text : Keep("<pre class='escaped embedPastebinRaw' id='pastebinEmbed_$id'>\n" . $raw_text . "\n</pre>\n");
+		## The ‘no-pre’ option means we shouldn’t wrap the text in a <pre> tag.
+		$out = $noPre 
+			   ? $raw_text 
+			   : Keep("<pre class='escaped embedPastebinRaw' id='pastebinEmbed_$id'>\n" . $raw_text . "\n</pre>\n");
 	} else if ($noJS) {
 		include_once('simple_html_dom.php');
 		
@@ -141,7 +147,8 @@ function PastebinEmbed ($m) {
 	} else {
 		$out = Keep("<script id='pastebinEmbedScript_$id' src='$embed_js_url'></script>");
 
-		if (!empty($hl_line_numbers) || !empty($line_numbers)) {
+		if (   !empty($hl_line_numbers) 
+			|| !empty($line_numbers)) {
 			$line_numbers_js = "[ ".implode(", ",$line_numbers)." ]";
 			$hl_line_numbers_js = "[ ".implode(", ",$hl_line_numbers)." ]";
 			$out .= Keep("
