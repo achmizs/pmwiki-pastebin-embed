@@ -1,9 +1,13 @@
 <?php if (!defined('PmWiki')) exit();
-
-$RecipeInfo['Pastebin Embed']['Version'] = '2017-12-27';
+/** \pastebin-embed.php
+  * \Copyright 2017-2021 Said Achmiz
+  * \Licensed under the MIT License
+  * \brief Embed Pastebin pastes in a wikipage.
+  */
+$RecipeInfo['PastebinEmbed']['Version'] = '2018-10-19';
 
 ## (:pastebin-embed:)
-Markup('pastebin-embed', '<fulltext', '/\\(:pastebin-embed\\s+(.+)\\s*:\\)/', 'PastebinEmbed');
+Markup('pastebin-embed', '<fulltext', '/\\(:pastebin-embed\\s+(.+?)\\s*:\\)/', 'PastebinEmbed');
 
 SDV($PastebinEmbedHighlightStyle, "background-color: yellow;");
 
@@ -211,6 +215,7 @@ function PastebinEmbedInjectStyles() {
 		$styles = "
 .embedPastebinRaw .pastebin-embed-highlighted-line { $PastebinEmbedHighlightStyle display: inline-block; width: calc(100% + 4px); padding-left: 4px; margin-left: -4px; }
 .embedPastebin li .pastebin-embed-highlighted-line { $PastebinEmbedHighlightStyle }
+#wikitext .embedPastebin ol { margin: 0; padding: 0 0 0 60px; }
 ";
 		$HTMLStylesFmt['pastebin-embed'][] = $styles;
 	}
