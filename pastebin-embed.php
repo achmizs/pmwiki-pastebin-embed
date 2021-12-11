@@ -4,7 +4,7 @@
   * \Licensed under the MIT License
   * \brief Embed Pastebin pastes in a wikipage.
   */
-$RecipeInfo['PastebinEmbed']['Version'] = '2021-12-05';
+$RecipeInfo['PastebinEmbed']['Version'] = '2021-12-11';
 
 ## (:pastebin-embed:)
 Markup('pastebin-embed', '<fulltext', '/\(:pastebin-embed\s+(.+?)\s*:\)/', 'PastebinEmbed');
@@ -66,7 +66,7 @@ function PastebinEmbed ($m) {
 	
 	$out = "<span class='pastebin-embed-error'>Unknown error.</span>";
 	
-	## There are three ‘modes’: raw (retrieve just the text, client-side, and insert it
+	## There are three ‘modes’: raw (retrieve just the text, server-side, and insert it
 	## into the page), no-js (retrieve the HTML, server-side, and insert it into the 
 	## page), and default (i.e., JS-based: insert the scriptlet, and let it retrieve and 
 	## insert the HTML into the page, client-side & async).
@@ -76,7 +76,8 @@ function PastebinEmbed ($m) {
 	## - if the ‘no-js’ option is given, no-js mode is used
 	if ($raw) {
 		$raw_text = file_get_contents($embed_raw_url);
-		if (!$raw_text) return Keep("<span class='pastebin-embed-error'>Could not retrieve paste!</span>");
+		if (!$raw_text)
+			return Keep("<span class='pastebin-embed-error'>Could not retrieve paste!</span>");
 		
 		$raw_lines = explode("\n", $raw_text);
 		## Convert HTML entities.
@@ -85,7 +86,8 @@ function PastebinEmbed ($m) {
 				$line = PVSE($line);
 		}
 		## Highlighting only works if no-pre is NOT enabled.
-		if (!empty($hl_line_numbers) && !$noPre) {
+		if (   !empty($hl_line_numbers) 
+			&& !$noPre) {
 			if ($hl_to_end_from >= 0)
 				$hl_line_numbers = array_merge($hl_line_numbers, range($hl_to_end_from, count($raw_lines) - 1));
 			foreach ($hl_line_numbers as $l) {
@@ -108,12 +110,14 @@ function PastebinEmbed ($m) {
 		include_once('simple_html_dom.php');
 		
 		$content_html = file_get_html($embed_iframe_url);
-		if (!$content_html) return Keep("<span class='pastebin-embed-error'>Could not retrieve paste!</span>");
+		if (!$content_html)
+			return Keep("<span class='pastebin-embed-error'>Could not retrieve paste!</span>");
 		$content = $content_html->find(".embedPastebin", 0);
 		$content->id = "pastebinEmbed_$id";
 		
 		$styles_html = file_get_html($embed_js_url);
-		if (!$styles_html) return Keep("<span class='pastebin-embed-error'>Could not retrieve styles!</span>");
+		if (!$styles_html)
+			return Keep("<span class='pastebin-embed-error'>Could not retrieve styles!</span>");
 		$styles = $styles_html->find("style", 0);
 		
 		## Filter specified line ranges (if any have been specified via the lines= 
@@ -146,26 +150,31 @@ function PastebinEmbed ($m) {
 		$out = Keep($styles.$content);
 	} else {
 		$out = Keep("<script id='pastebinEmbedScript_$id' src='$embed_js_url'></script>");
+		$out .= Keep("
+<script>
+	document.querySelector('#pastebinEmbedScript_$id').parentElement.nextSibling.querySelector('.embedPastebin').id = 'pastebinEmbed_$id';
+</script>
+		");
 
 		if (   !empty($hl_line_numbers) 
 			|| !empty($line_numbers)) {
-			$line_numbers_js = "[ ".implode(", ",$line_numbers)." ]";
-			$hl_line_numbers_js = "[ ".implode(", ",$hl_line_numbers)." ]";
+			$line_numbers_js = "[ " . implode(", ", $line_numbers) . " ]";
+			$hl_line_numbers_js = "[ " . implode(", ", $hl_line_numbers) . " ]";
 			$out .= Keep("
-<script>
-	var num_lines = document.querySelector('#pastebinEmbedScript_$id').parentElement.nextSibling.querySelectorAll('.embedPastebin > ol > li').length;
+<script>{
+	let num_lines = document.querySelector('#pastebinEmbed_$id').querySelectorAll('.embedPastebin > ol > li').length;
 	
-	var line_numbers = $line_numbers_js;	
-	var to_end_from = $to_end_from;
+	let line_numbers = $line_numbers_js;	
+	let to_end_from = $to_end_from;
 	if (to_end_from >= 0)
 		line_numbers = [...line_numbers, ...[...Array(num_lines - to_end_from)].map((_, i) => to_end_from + i)];
 
-	var hl_line_numbers = $hl_line_numbers_js;
-	var hl_to_end_from = $hl_to_end_from;
+	let hl_line_numbers = $hl_line_numbers_js;
+	let hl_to_end_from = $hl_to_end_from;
 	if (hl_to_end_from >= 0)
 		hl_line_numbers = [...hl_line_numbers, ...[...Array(num_lines - hl_to_end_from)].map((_, i) => hl_to_end_from + i)];
 
-	document.querySelector('#pastebinEmbedScript_$id').parentElement.nextSibling.querySelectorAll('.embedPastebin > ol > li').forEach(function (line, i) {
+	document.querySelector('#pastebinEmbed_$id').querySelectorAll('.embedPastebin .source > ol > li').forEach(function (line, i) {
 		// Highlight specified line ranges (if any have been specified via the hl= parameter).
 		if (hl_line_numbers.indexOf(i) != -1)
 			line.firstChild.className += ' pastebin-embed-highlighted-line';
@@ -178,11 +187,9 @@ function PastebinEmbed ($m) {
 				line.value = ++i;
 		}
 	});
-</script>
+}</script>
 			");
 		}
-		
-		PastebinEmbedAppendFooter();
 	}
 	
 	global $HTMLStylesFmt;
@@ -190,29 +197,13 @@ function PastebinEmbed ($m) {
 		$HTMLStylesFmt['pastebin-embed'][] = "#pastebinEmbed_$id .embedFooter { display: none; }\n";
 	}
 	if (!$raw && $noLineNumbers) {
-		$HTMLStylesFmt['pastebin-embed'][] = "#pastebinEmbed_$id > ol { padding-left: 5px; }\n";
+		$HTMLStylesFmt['pastebin-embed'][] = "#pastebinEmbed_$id .source > ol { padding-left: 5px; }\n";
 	}
 	
 	PastebinEmbedInjectStyles();
 	
 	$id++;
 	return $out;
-}
-
-function PastebinEmbedAppendFooter() {
-	static $ran_once = false;
-	if (!$ran_once) {
-		global $HTMLFooterFmt;
-		$HTMLFooterFmt[] = 
-"<script>
-	document.querySelectorAll('div.embedPastebin').forEach(function (embed) {
-		if (embed.previousSibling && embed.previousSibling.tagName == 'P') {
-			embed.id = 'pastebinEmbed_' + embed.previousSibling.firstChild.id.substring(20);
-		}
-	});
-</script>\n";
-	}
-	$ran_once = true;
 }
 
 function PastebinEmbedInjectStyles() {
