@@ -25,6 +25,9 @@ function PastebinEmbed ($m) {
 	$noLineNumbers = in_array('nolinenums', $args);
 	$raw = in_array('raw', $args);
 	$noPre = in_array('no-pre', $args);
+
+	## Dark theme, if specified.
+	$theme = $parsed['theme'] ?: "";
 	
 	## Convert the comma-delimited line ranges to an array containing each line to be
 	## included as values.
@@ -60,8 +63,8 @@ function PastebinEmbed ($m) {
 		}
 	}
 	
-	$embed_js_url = "https://pastebin.com/embed_js/$paste_id";
-	$embed_iframe_url = "https://pastebin.com/embed_iframe/$paste_id";
+	$embed_js_url = "https://pastebin.com/embed_js/$paste_id" . ($theme ? "?theme={$theme}" : "");
+	$embed_iframe_url = "https://pastebin.com/embed_iframe/$paste_id" . ($theme ? "?theme={$theme}" : "");
 	$embed_raw_url = "https://pastebin.com/raw/$paste_id";
 	
 	$out = "<span class='pastebin-embed-error'>Unknown error.</span>";
