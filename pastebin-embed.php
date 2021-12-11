@@ -110,7 +110,7 @@ function PastebinEmbed ($m) {
 			   ? $raw_text 
 			   : Keep("<pre class='escaped embedPastebinRaw' id='pastebinEmbed_$id'>\n" . $raw_text . "\n</pre>\n");
 	} else if ($noJS) {
-		include_once('simple_html_dom.php');
+		include_once('simplehtmldom/simple_html_dom.php');
 		
 		$content_html = file_get_html($embed_iframe_url);
 		if (!$content_html)
