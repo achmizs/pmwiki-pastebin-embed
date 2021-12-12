@@ -6,4 +6,4 @@ This is a [PmWiki](https://www.pmwiki.org) recipe that lets you embed [Pastebin]
 
 Please see [the recipe page on pmwiki.org](https://www.pmwiki.org/wiki/Cookbook/PastebinEmbed) for installation and usage instructions. (Refer to the Talk page of the recipe page for support.)
 
-Copyright 2015-2021 Said Achmiz.
+Copyright 2017-2021 Said Achmiz.
